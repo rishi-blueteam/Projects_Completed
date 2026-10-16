@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LinkedIn Banner Generator - SOC Analyst</title>
+<style>
+  body { margin:0; padding:24px; background:#111; color:#ddd;
+         font-family:"DejaVu Sans","Segoe UI",Verdana,Arial,sans-serif; }
+  h1   { font-size:18px; margin:0 0 12px; color:#00e676; font-family:Consolas,"DejaVu Sans Mono",monospace; }
+  canvas { width:100%; max-width:1584px; height:auto; display:block; border:1px solid #333; }
+  button { margin-top:14px; padding:10px 18px; font-size:15px; font-weight:bold; cursor:pointer;
+           background:#00e676; color:#000; border:0; border-radius:6px; }
+  #status { margin-left:12px; font-size:14px; }
+  .warn { color:#ffd60a; } .ok { color:#00e676; }
+  code { background:#222; padding:2px 6px; border-radius:4px; }
+</style>
+</head>
+<body>
+<h1>/$ linkedin_banner_generator</h1>
+<canvas id="banner" width="1584" height="396"></canvas>
+<button id="dl">Download PNG (1584 x 396)</button><span id="status"></span>
+<p style="font-size:14px;line-height:1.6">
+  To change the banner, edit the <code>CONFIG</code> block in this file (open it in any text editor),
+  save, then refresh this page and click Download.
+</p>
+
+<script>
+/* =====================================================================
+   CONFIG  -  THIS IS THE ONLY PART YOU NEED TO EDIT
+   Tip: put // in front of any line to "comment it out" (hide it).
+        Remove the // to bring it back.
+   Colors you can use by name: "green", "white", "yellow", "grey"
+   ===================================================================== */
+const CONFIG = {
+
+  // Small terminal-style line above the headline
+  prompt: "/$",
+  tag: "SOC ANALYST L1  |  SECURITY ANALYST",
+
+  // Big headline (each piece can have its own color)
+  headline: [
+    { text: "Detect. ",  color: "white" },
+    { text: "Triage. ",  color: "white" },
+    { text: "Respond.",  color: "green" },
+  ],
+
+  // ---------------------------------------------------------------
+  // SKILL SECTIONS  (columns). Add / remove / rename freely.
+  // style: "outline" = green outlined chips, "solid" = filled green chips
+  // Recommended: 3 sections (max 4). Keep each list short so it fits.
+  // ---------------------------------------------------------------
+  sections: [
+    {
+      title: "NETWORK SECURITY",
+      style: "outline",
+      items: [
+        "Network Traffic Analysis",
+        "TCP/IP",
+        "Firewall",
+        "IPS/IDS",
+        "Packet Analysis",
+        // "DNS",              // <- remove the // to add
+        // "VPN",
+      ],
+    },
+    {
+      title: "SOC OPERATIONS",
+      style: "outline",
+      items: [
+        "Security Alert Analysis",
+        "Phishing Analysis",
+        "Incident Triage",
+        "Threat Detection",
+        // "Log Analysis",
+        // "MITRE ATT&CK",
+        // "Incident Response",
+      ],
+    },
+    {
+      title: "SECURITY TOOLS",
+      style: "solid",
+      items: [
+        "Wireshark",
+        "Wazuh",
+        "Splunk",
+        "Snort",
+        // "Suricata",
+        // "Nmap",
+        // "VirusTotal",
+      ],
+    },
+    // ---- Want a 4th column? Remove the // below (then keep other lists short) ----
+    // {
+    //   title: "CLOUD SECURITY",
+    //   style: "outline",
+    //   items: ["Microsoft Sentinel", "Defender XDR", "Azure"],
+    // },
+  ],
+
+  // Bottom row: certifications (yellow chips)
+  certs: [
+    "Microsoft SC-200",
+    "Microsoft AZ-900",
+    "Google Cybersecurity Professional",
+    // "CompTIA Security+",
+    // "CEH",
+  ],
+
+  // Bottom-right text
+  github: "github.com/rishi-blueteam",
+
+  // Terminal window shown in the top-left (above your profile photo)
+  terminal: {
+    title: "blue_team.py",
+    lines: [
+      ["> blue_team.defend()",               "white"],
+      ["[!] threat detected",                "yellow"],
+      ["[~] threat under review by analyst", "white"],
+      ["[+] threat triaged",                 "white"],
+      ["[OK] threat contained",              "green"],
+    ],
+  },
+
+  colors: {
+    bg: "#050706", green: "#00e676", white: "#f5f5f5",
+    yellow: "#ffd60a", grey: "#96a09b",
+  },
+};
+/* ===================== END OF CONFIG ===================== */
+
+
+/* ---------- Drawing code (no need to edit below) ---------- */
+const W = 1584, H = 396;
+const MONO = '"DejaVu Sans Mono", Consolas, Menlo, "Courier New", monospace';
+const SANS = '"DejaVu Sans", "Segoe UI", Verdana, Arial, sans-serif';
+const C = CONFIG.colors;
+const canvas = document.getElementById("banner");
+const ctx = canvas.getContext("2d");
+const col = n => C[n] || n;
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function text(t, x, y, font, color, align = "left") {
+  ctx.font = font; ctx.fillStyle = col(color);
+  ctx.textAlign = align; ctx.textBaseline = "middle";
+  ctx.fillText(t, x, y);
+}
+function width(t, font) { ctx.font = font; return ctx.measureText(t).width; }
+function rgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+function draw() {
+  let maxChipBottom = 0;
+
+  // background
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+
+  // faint dot grid (left side)
+  for (let gx = 30; gx < 380; gx += 22)
+    for (let gy = 24; gy < 380; gy += 22) {
+      ctx.fillStyle = rgba(C.green, 0.24 * Math.max(0, 1 - gx / 380));
+      ctx.beginPath(); ctx.arc(gx, gy, 1, 0, 6.2832); ctx.fill();
+    }
+
+  // vertical divider
+  ctx.fillStyle = C.green; ctx.fillRect(402, 40, 2, 316);
+
+  // ---- terminal card (top-left) ----
+  const t = CONFIG.terminal, cx0 = 36, cy0 = 28, cx1 = 376, cy1 = 146;
+  roundRect(cx0, cy0, cx1 - cx0, cy1 - cy0, 10);
+  ctx.fillStyle = "#0a100d"; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = rgba(C.green, 0.63); ctx.stroke();
+  ctx.fillStyle = rgba(C.green, 0.27); ctx.fillRect(cx0 + 1, cy0 + 24, cx1 - cx0 - 2, 1);
+  [C.green, C.yellow, "#c8c8c8"].forEach((c, i) => {
+    ctx.fillStyle = c; ctx.beginPath(); ctx.arc(cx0 + 14 + i * 14, cy0 + 12, 4, 0, 6.2832); ctx.fill();
+  });
+  text(t.title, cx0 + 62, cy0 + 12, `bold 11px ${MONO}`, "grey");
+  t.lines.forEach(([s, c], i) => text(s, cx0 + 16, cy0 + 40 + i * 17, `bold 12px ${MONO}`, c));
+
+  // shield icon inside terminal card
+  const sx = 338, sy = 92;
+  ctx.fillStyle = rgba(C.green, 0.1); ctx.beginPath(); ctx.arc(sx, sy, 34, 0, 6.2832); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(sx, sy - 30); ctx.lineTo(sx + 24, sy - 21); ctx.lineTo(sx + 24, sy + 2);
+  ctx.lineTo(sx, sy + 30); ctx.lineTo(sx - 24, sy + 2); ctx.lineTo(sx - 24, sy - 21); ctx.closePath();
+  ctx.fillStyle = "#002816"; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = C.green; ctx.lineJoin = "round"; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx - 10, sy - 1); ctx.lineTo(sx - 2, sy + 8); ctx.lineTo(sx + 11, sy - 10);
+  ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.stroke();
+
+  // ---- tag + headline ----
+  const X0 = 440;
+  text(`${CONFIG.prompt} ${CONFIG.tag}`, X0, 48, `bold 18px ${MONO}`, "green");
+  let hx = X0;
+  const hf = `bold 46px ${SANS}`;
+  CONFIG.headline.forEach(p => { text(p.text, hx, 90, hf, p.color); hx += width(p.text, hf); });
+
+  // ---- skill sections (auto layout) ----
+  const n = CONFIG.sections.length, RIGHT = 1540;
+  const colW = (RIGHT - X0) / n, maxw = colW - 20;
+  const chipFont = `15px ${SANS}`, chipBold = `bold 15px ${SANS}`;
+  CONFIG.sections.forEach((sec, i) => {
+    const cx = X0 + i * colW, solid = sec.style === "solid";
+    const titleFont = `bold 14px ${MONO}`;
+    text(">", cx, 144, titleFont, "green");                                   // terminal-style marker
+    text(sec.title, cx + width(">", titleFont) + 6, 144, titleFont, "grey");  // title, same line/baseline
+    let x = cx, y = 162; const h = 28;
+    sec.items.forEach(item => {
+      const f = solid ? chipBold : chipFont, w = width(item, f) + 26;
+      if (x + w > cx + maxw && x > cx) { x = cx; y += h + 8; }
+      roundRect(x, y, w, h, 14);
+      if (solid) { ctx.fillStyle = C.green; ctx.fill(); text(item, x + 13, y + 14, f, "#000000"); }
+      else { ctx.lineWidth = 1.5; ctx.strokeStyle = rgba(C.green, 0.86); ctx.stroke(); text(item, x + 13, y + 14, f, "white"); }
+      x += w + 8; maxChipBottom = Math.max(maxChipBottom, y + h);
+    });
+  });
+
+  // divider line
+  ctx.fillStyle = "rgba(255,255,255,0.16)"; ctx.fillRect(X0, 282, RIGHT - X0, 1);
+
+  // ---- certifications (yellow) ----
+  let kx = X0;
+  CONFIG.certs.forEach(c => {
+    const f = chipBold, w = width(c, f) + 26;
+    roundRect(kx, 304, w, 30, 15); ctx.lineWidth = 1.5; ctx.strokeStyle = C.yellow; ctx.stroke();
+    text(c, kx + 13, 319, f, "yellow"); kx += w + 10;
+  });
+  const certsEnd = kx;
+
+  // ---- github ----
+  const gf = `bold 17px ${MONO}`;
+  text(CONFIG.github, RIGHT, 319, gf, "green", "right");
+  const ghStart = RIGHT - width(CONFIG.github, gf);
+
+  // ---- layout checks ----
+  const msgs = [];
+  if (maxChipBottom > 272) msgs.push("Too many skills: chips run into the divider line. Remove or shorten some.");
+  if (certsEnd > ghStart - 20) msgs.push("Certifications row is too long: it touches the GitHub link. Remove one or shorten it.");
+  const el = document.getElementById("status");
+  el.className = msgs.length ? "warn" : "ok";
+  el.textContent = msgs.length ? msgs.join(" ") : "Layout OK - everything fits.";
+}
+
+draw();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+
+document.getElementById("dl").addEventListener("click", () => {
+  canvas.toBlob(b => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(b);
+    a.download = "linkedin_banner_1584x396.png";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, "image/png");
+});
+</script>
+</body>
+</html>

@@ -1,5 +1,8 @@
 # [Campus Immersive Street View](https://www.figma.com/proto/8GBl0qs45akvDlldSYo42i/NMIMS-Campus-Map-Walkthrough?node-id=142-5&starting-point-node-id=142%3A5&t=J2WI9iczq7rkqxd9-1)
 
+Just like how we use Google Maps and use Street View to see the buildings in an unfamiliar area, similarly, an immersive campus walkthrough lets you see different parts of the campus....
+
+
 **Click on the Link mentioned below:**
 
 https://www.figma.com/proto/8GBl0qs45akvDlldSYo42i/NMIMS-Campus-Map-Walkthrough?node-id=142-5&starting-point-node-id=142%3A5
